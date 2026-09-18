@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: transactions
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/banking_transactions?createDatabaseIfNotExist=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:banking}
+    password: ${SPRING_DATASOURCE_PASSWORD:banking123}
+  jpa:
+    hibernate:
+      ddl-auto: update
