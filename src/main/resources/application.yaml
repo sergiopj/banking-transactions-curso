@@ -1,6 +1,6 @@
 spring:
   application:
-    name: transactions
+    name: banking-transactions-api
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/banking_transactions?createDatabaseIfNotExist=true&serverTimezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME:banking}
@@ -8,3 +8,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        '[format_sql]': true
+server:
+  port: 8080
+

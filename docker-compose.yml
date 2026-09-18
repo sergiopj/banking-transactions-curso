@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: banking-mysql
+    container_name: banking-transactions-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: banking_transactions
@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: banking-app
+    container_name: banking-transactions-api
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/banking_transactions?createDatabaseIfNotExist=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: banking
