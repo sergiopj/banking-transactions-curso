@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.banking.transactions.domain.exception.NegativeMoneyException;
 
+// TODO entender todo lo que hace esta clase, es un value object que representa una transaccion bancaria, con atributos inmutables como id, tipo de transaccion, monto y fecha de creacion. Tiene un constructor para crear una nueva transaccion y otro privado para reconstituirla desde datos persistidos. Ademas tiene metodos para obtener los atributos y sobreescribe equals, hashCode y toString.
 // Immutable banking transaction representing an unalterable historical event (no setters)
 public final class Transaction {
 

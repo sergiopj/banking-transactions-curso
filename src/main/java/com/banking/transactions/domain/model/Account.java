@@ -8,6 +8,7 @@ import java.util.Objects;
 import com.banking.transactions.domain.exception.InsufficientBalanceException;
 import com.banking.transactions.domain.exception.NegativeMoneyException;
 
+// TODO entender todo lo que hace esta clase, es la clase principal de la cuenta bancaria, que tiene un id, un customerId, un balance y una lista de transacciones. Tiene metodos para depositar y retirar dinero, y para reconstituir una cuenta a partir de datos persistidos. Tambien tiene metodos para obtener el id, el customerId, el balance y las transacciones.
 // Aggregate Root — the only entry point to manage balance and transaction history
 public final class Account {
 

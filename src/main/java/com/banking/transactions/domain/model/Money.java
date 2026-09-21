@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
 
+// TODO entender todo lo que hace esta clase, es un value object que representa dinero, con metodos para sumar, restar, verificar si es negativo o positivo, y obtener el valor como BigDecimal. Ademas tiene metodos estaticos para crear instancias de Money a partir de String o BigDecimal, y un metodo para obtener una instancia de Money con valor cero.
 // Immutable Value Object representing money (DDD)
 public final class Money {
 
