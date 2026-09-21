@@ -17,16 +17,21 @@ public final class Money {
 
     // Creates Money from String — useful for parsing user input
     public static Money of(String value) {
-        if (value == null)
+        if (value == null) {
             throw new IllegalArgumentException("Amount cannot be null");
+        }
+        ;
         return new Money(new BigDecimal(value));
     }
 
     // Creates Money from BigDecimal — preferred for calculations
     public static Money from(BigDecimal value) {
-        if (value == null)
+        if (value == null) {
             throw new IllegalArgumentException("Amount cannot be null");
+        }
+        ;
         return new Money(value);
+
     }
 
     // Returns a Money representing zero
@@ -42,12 +47,18 @@ public final class Money {
 
     // Subtracts money (withdrawal / debit)
     public Money subtract(Money other) {
+        Objects.requireNonNull(other, "Other money cannot be null");
         return new Money(this.amount.subtract(other.amount));
     }
 
     // Checks if amount is negative (< 0)
     public boolean isNegative() {
         return this.amount.compareTo(BigDecimal.ZERO) < 0;
+    }
+
+    // Checks if amount is positive (> 0)
+    public boolean isPositive() {
+        return this.amount.compareTo(BigDecimal.ZERO) > 0;
     }
 
     // Returns the BigDecimal amount
