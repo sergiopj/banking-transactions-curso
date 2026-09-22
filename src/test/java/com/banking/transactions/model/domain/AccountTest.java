@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// TODO hacer yo el resto de tests, y entender que se esta probando y que se espera, en este caso que el balance sea 150.00 y que la transaccion sea de tipo DEPOSIT
+
 class AccountTest {
 
     // AAA pattern:

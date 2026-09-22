@@ -4,11 +4,23 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
-
 import com.banking.transactions.domain.exception.NegativeMoneyException;
 
-// TODO entender todo lo que hace esta clase, es un value object que representa una transaccion bancaria, con atributos inmutables como id, tipo de transaccion, monto y fecha de creacion. Tiene un constructor para crear una nueva transaccion y otro privado para reconstituirla desde datos persistidos. Ademas tiene metodos para obtener los atributos y sobreescribe equals, hashCode y toString.
-// Immutable banking transaction representing an unalterable historical event (no setters)
+/**
+ * ENTIDAD DE DOMINIO - Evento histórico inmutable
+ * 
+ * POR QUÉ public final class: public para ser accesible desde application e
+ * infrastructure.
+ * final: Nadie puede heredar de Transaction. En DDD una transacción bancaria es
+ * un hecho
+ * cerrado, no se extiende. Garantiza inmutabilidad real.
+ * 
+ * POR QUÉ private final fields: private para encapsular, nadie toca el estado
+ * directo.
+ * final para inmutabilidad: una vez creada, nunca cambia. Sin setters. Así
+ * evitas fraude
+ * o modificación del histórico en banca.
+ */
 public final class Transaction {
 
     private final String id;
@@ -16,8 +28,11 @@ public final class Transaction {
     private final Money amount;
     private final Instant createdAt;
 
-    // Constructor for creating a new transaction — generates its own id and
-    // timestamp
+    /**
+     * POR QUÉ public constructor: Es el constructor de NEGOCIO. Lo usa el dominio
+     * cuando haces account.deposit(). Genera su propio id y timestamp, el exterior
+     * no puede decidirlos. Aquí valida invariantes.
+     */
     public Transaction(TransactionType transactionType, Money amount) {
         if (transactionType == null) {
             throw new IllegalArgumentException("Transaction type is required");
@@ -25,18 +40,21 @@ public final class Transaction {
         if (amount == null) {
             throw new IllegalArgumentException("Amount is required");
         }
-        // Covers both zero and negative in one check — amount must always be a positive
         if (amount.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new NegativeMoneyException("Amount must be greater than zero");
         }
 
-        this.id = UUID.randomUUID().toString();
+        this.id = UUID.randomUUID().toString(); // El dominio genera su identidad
         this.transactionType = transactionType;
         this.amount = amount;
-        this.createdAt = Instant.now();
+        this.createdAt = Instant.now(); // El dominio genera su timestamp
     }
 
-    // Private constructor for reconstitution only — used when loading from DB
+    /**
+     * POR QUÉ private constructor: Constructor de RECONSTITUCIÓN. Solo para
+     * reconstruir desde BD. Es private porque el negocio nunca debe usarlo,
+     * solo el método reconstitute().
+     */
     private Transaction(String id, TransactionType transactionType, Money amount, Instant createdAt) {
         this.id = id;
         this.transactionType = transactionType;
@@ -44,12 +62,19 @@ public final class Transaction {
         this.createdAt = createdAt;
     }
 
-    // Factory method to rebuild a Transaction from persisted data (DB / repository)
+    /**
+     * POR QUÉ public static reconstitute(): Factory Method de DDD.
+     * public: lo necesita infrastructure (JpaAdapter) para reconstruir.
+     * static: no necesitas una instancia previa para reconstruir.
+     * Nombre reconstitute: deja claro que no es una creación nueva de negocio,
+     * es una reconstrucción desde persistencia.
+     */
     public static Transaction reconstitute(String id, TransactionType transactionType, Money amount,
             Instant createdAt) {
         return new Transaction(id, transactionType, amount, createdAt);
     }
 
+    // POR QUÉ solo getters y no setters: Inmutabilidad. Lees, pero no modificas.
     public String getId() {
         return id;
     }
@@ -66,6 +91,8 @@ public final class Transaction {
         return createdAt;
     }
 
+    // equals/hashCode solo por id: En DDD dos Transactions son la misma entidad
+    // si tienen el mismo id, aunque cambie lo demás.
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -79,15 +106,4 @@ public final class Transaction {
     public int hashCode() {
         return Objects.hash(id);
     }
-
-    @Override
-    public String toString() {
-        return "Transaction{" +
-                "id='" + id + '\'' +
-                ", transactionType=" + transactionType +
-                ", amount=" + amount +
-                ", createdAt=" + createdAt +
-                '}';
-    }
-
 }
