@@ -23,7 +23,7 @@ package com.banking.transactions.application.dto;
  * por simplicidad de JSON y el UseCase lo convierte a Money.of(amount) donde
  * ya se valida que no sea negativo con NegativeMoneyException.
  */
-public record DepositMoneyComand(
-        String accountId,
-        double amount) {
+public record DepositMoneyCommand(
+                String accountId,
+                double amount) {
 }

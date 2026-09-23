@@ -1,7 +1,7 @@
 package com.banking.transactions.application.port;
 
 import com.banking.transactions.application.dto.AccountDetailsDto;
-import com.banking.transactions.application.dto.DepositMoneyComand;
+import com.banking.transactions.application.dto.DepositMoneyCommand;
 
 /**
  * PUERTO DE ENTRADA (Port In) - Caso de Uso Ingresar Dinero
@@ -33,5 +33,5 @@ public interface DepositMoneyUseCase {
 
     // Orquesta: findById -> Money.of(command.amount()) -> account.deposit() ->
     // save() -> MapToAccountDetailsDto.from()
-    AccountDetailsDto depositMoney(DepositMoneyComand command);
+    AccountDetailsDto depositMoney(DepositMoneyCommand command);
 }
