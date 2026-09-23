@@ -10,9 +10,6 @@ package com.banking.transactions.application.dto;
  * POR QUÉ public record: Command inmutable. Cuando pides crear cuenta con
  * cliente X y saldo Y, eso no se modifica a mitad del caso de uso.
  * 
- * POR QUÉ CreateAccountComand (con typo): En tu repo viene así, lo dejo igual
- * para que te compile. En real sería CreateAccountCommand con doble m.
- * 
  * POR QUÉ String customerId: Entra como String desde el JSON. El UseCase luego
  * valida si es necesario. No metes Value Objects aquí.
  * 
@@ -21,7 +18,7 @@ package com.banking.transactions.application.dto;
  * o distinguir "no me mandó saldo" de "me mandó 0.0". Con double primitivo
  * siempre sería 0.0 y no sabrías. En banca esa diferencia importa.
  */
-public record CreateAccountComand(
-        String customerId,
-        Double initialBalance) {
+public record CreateAccountCommand(
+                String customerId,
+                Double initialBalance) {
 }

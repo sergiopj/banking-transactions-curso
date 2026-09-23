@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
 
+import com.banking.transactions.domain.exception.NegativeMoneyException;
+
 /**
  * VALUE OBJECT INMUTABLE - Representa dinero (DDD)
  * 
@@ -35,13 +37,33 @@ public final class Money {
      * usuario.
      * public: lo necesita application/ para convertir el DTO.
      * static: no necesitas una instancia previa de Money para crear una.
-     * of(String): semántica para crear desde texto (JSON, formulario).
+     * of(String): semántica para crear desde texto (JSON, formulario) usando
+     * BigDecimal(String) que es exacto, no BigDecimal(double).
      */
     public static Money of(String value) {
         if (value == null) {
             throw new IllegalArgumentException("Amount cannot be null");
         }
-        return new Money(new BigDecimal(value));
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Amount cannot be empty");
+        }
+        try {
+            BigDecimal decimal = new BigDecimal(trimmed);
+            // En banca el saldo inicial no puede ser negativo
+            if (decimal.compareTo(BigDecimal.ZERO) < 0) {
+                throw new NegativeMoneyException("Amount cannot be negative: " + value);
+            }
+            return new Money(decimal);
+        } catch (NumberFormatException ex) {
+            // Para que no te suba un NumberFormatException feo al Controller
+            throw new IllegalArgumentException("Invalid amount format: " + value, ex);
+        }
+    }
+
+    // FIX para tu error del CreateAccountService, añádelo en la misma clase:
+    public static Money of(Double value) {
+        return value == null ? Money.of("0") : Money.of(String.valueOf(value));
     }
 
     /**
