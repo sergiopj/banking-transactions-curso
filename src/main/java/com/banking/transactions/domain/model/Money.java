@@ -3,130 +3,92 @@ package com.banking.transactions.domain.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
-
 import com.banking.transactions.domain.exception.NegativeMoneyException;
 
 /**
- * VALUE OBJECT INMUTABLE - Representa dinero (DDD)
- * 
- * POR QUÉ public final class: public para usarse en todo el Core.
- * final: Un Value Object nunca se hereda. Si heredas de Money rompes la
- * inmutabilidad y el equals. En banca, Money es sagrado y cerrado.
+ * Value Object inmutable - Dinero. public para el Core, final para no heredar y
+ * proteger equals/inmutabilidad. Envuelve BigDecimal siempre con 2 decimales y
+ * HALF_UP, nunca double.
  */
 public final class Money {
 
-    // POR QUÉ private final BigDecimal: private para encapsular, final para
-    // inmutabilidad total. Una vez creado, nunca cambia de valor.
-    // Siempre con 2 decimales, como en banca real.
-    private final BigDecimal amount;
+    private final BigDecimal amount; // final = inmutable total
 
-    /**
-     * POR QUÉ private constructor: Fuerza el uso de fábricas.
-     * private porque el exterior no debe hacer new Money(new
-     * BigDecimal("10.123456")).
-     * Aquí centralizas la regla de negocio: siempre 2 decimales con HALF_UP.
-     * Si fuera public, cada dev podría crear Money con distinta escala.
-     */
+    /** Constructor privado: fuerza fábricas y centraliza regla de 2 decimales */
     private Money(BigDecimal amount) {
-        // Regla bancaria: 2 decimales, redondeo bancario HALF_UP (1.005 -> 1.01)
-        this.amount = amount.setScale(2, RoundingMode.HALF_UP);
+        this.amount = amount.setScale(2, RoundingMode.HALF_UP); // regla bancaria
     }
 
     /**
-     * POR QUÉ public static of(String): Factory Method para parsear input de
-     * usuario.
-     * public: lo necesita application/ para convertir el DTO.
-     * static: no necesitas una instancia previa de Money para crear una.
-     * of(String): semántica para crear desde texto (JSON, formulario) usando
-     * BigDecimal(String) que es exacto, no BigDecimal(double).
+     * Factory desde texto (JSON/DTO). Usa BigDecimal(String) exacto, no double.
+     * Valida negativo
      */
     public static Money of(String value) {
-        if (value == null) {
+        if (value == null)
             throw new IllegalArgumentException("Amount cannot be null");
-        }
         String trimmed = value.trim();
-        if (trimmed.isEmpty()) {
+        if (trimmed.isEmpty())
             throw new IllegalArgumentException("Amount cannot be empty");
-        }
         try {
             BigDecimal decimal = new BigDecimal(trimmed);
-            // En banca el saldo inicial no puede ser negativo
-            if (decimal.compareTo(BigDecimal.ZERO) < 0) {
+            if (decimal.compareTo(BigDecimal.ZERO) < 0)
                 throw new NegativeMoneyException("Amount cannot be negative: " + value);
-            }
             return new Money(decimal);
         } catch (NumberFormatException ex) {
-            // Para que no te suba un NumberFormatException feo al Controller
             throw new IllegalArgumentException("Invalid amount format: " + value, ex);
         }
     }
 
-    // FIX para tu error del CreateAccountService, añádelo en la misma clase:
+    /**
+     * Fix para Command con Double nullable: null->zero, si no String.valueOf para
+     * evitar BigDecimal(double) inexacto
+     */
     public static Money of(Double value) {
         return value == null ? Money.of("0") : Money.of(String.valueOf(value));
     }
 
-    /**
-     * POR QUÉ public static from(BigDecimal): Factory preferida para cálculos.
-     * from(BigDecimal): semántica "desde un BigDecimal ya existente".
-     * Separas of(String) vs from(BigDecimal) para dejar clara la intención.
-     */
+    /** Factory desde BigDecimal ya existente, preferida para cálculos internos */
     public static Money from(BigDecimal value) {
-        if (value == null) {
+        if (value == null)
             throw new IllegalArgumentException("Amount cannot be null");
-        }
         return new Money(value);
     }
 
-    /**
-     * POR QUÉ public static zero(): Value Object especial, dinero cero.
-     * static porque es una constante de fábrica, no necesita instancia.
-     * Evitas hacer Money.of("0") por todo el código.
-     */
+    /** Constante de fábrica: evita repetir Money.of("0") */
     public static Money zero() {
         return new Money(BigDecimal.ZERO);
     }
 
-    /**
-     * POR QUÉ public Money add(): Operación de dominio, inmutable.
-     * public porque es la API del Value Object.
-     * No es static: opera sobre this + other.
-     * Devuelve new Money: inmutabilidad. No modifica this, crea uno nuevo.
-     * Así encadenas: balance.add(deposit).subtract(fee)
-     */
+    /** Suma inmutable: no modifica this, devuelve nuevo Money. Permite encadenar */
     public Money add(Money other) {
         Objects.requireNonNull(other, "Other money cannot be null");
         return new Money(this.amount.add(other.amount));
     }
 
-    // Misma lógica que add() pero para débito / retirada
+    /** Resta inmutable para withdraw: misma lógica que add() */
     public Money subtract(Money other) {
         Objects.requireNonNull(other, "Other money cannot be null");
         return new Money(this.amount.subtract(other.amount));
     }
 
-    // POR QUÉ public boolean isNegative(): Query del Value Object.
-    // El dominio pregunta el estado sin exponer el BigDecimal.
-    // Usas compareTo, nunca equals ni < > con BigDecimal.
+    /**
+     * Query de estado <0 sin exponer BigDecimal. Usa compareTo, nunca < > ni equals
+     */
     public boolean isNegative() {
         return this.amount.compareTo(BigDecimal.ZERO) < 0;
     }
 
+    /** Query de estado >0 para validar deposit/withdraw */
     public boolean isPositive() {
         return this.amount.compareTo(BigDecimal.ZERO) > 0;
     }
 
-    // Getter simple, devuelve el BigDecimal interno (que ya es inmutable)
+    /** Getter safe: BigDecimal ya es inmutable */
     public BigDecimal getAmount() {
         return this.amount;
     }
 
-    /**
-     * POR QUÉ equals con compareTo: Value Object por valor, no por referencia.
-     * new Money("10.00") == new Money("10.0") debe ser true en banca.
-     * Por eso compareTo == 0 y no equals, que fallaría por escala.
-     * hashCode con stripTrailingZeros(): para que 10.00 y 10.0 tengan mismo hash.
-     */
+    /** Igualdad por valor, no por escala: 10.00 == 10.0 debe ser true en banca */
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -136,13 +98,16 @@ public final class Money {
         return this.amount.compareTo(money.amount) == 0;
     }
 
+    /**
+     * Hash compatible con equals: stripTrailingZeros para que 10.00 y 10.0 tengan
+     * mismo hash
+     */
     @Override
     public int hashCode() {
         return amount.stripTrailingZeros().hashCode();
     }
 
-    // toPlainString(): evita notación científica 1E+2, devuelve "100.00" limpio
-    // para logs
+    /** Evita notación científica 1E+2, devuelve "100.00" limpio para logs */
     @Override
     public String toString() {
         return amount.toPlainString();

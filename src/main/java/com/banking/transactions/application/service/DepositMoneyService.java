@@ -12,51 +12,39 @@ import com.banking.transactions.domain.port.AccountRepository;
 import jakarta.transaction.Transactional;
 
 /**
- * ADAPTER DE CASO DE USO - Ingresar Dinero
+ * Adapter del Caso de Uso Ingresar Dinero. Orquesta dominio, no sabe de HTTP ni
+ * JPA.
  * 
- * PATH: application/service/ -> Orquesta dominio. No sabe de HTTP ni de JPA.
- * Solo conoce Ports In (que implementa) y Ports Out (AccountRepository).
- * 
- * POR QUÉ @Service: Bean de aplicación que Spring inyecta en AccountController.
- * 
- * POR QUÉ implements DepositMoneyUseCase: El controller depende de la
- * interface,
- * tú aquí metes la lógica concreta. Hexagonal + DIP.
+ * @Service para inyección en Controller. Implementa puerto de entrada -> DIP +
+ *          Hexagonal.
+ *          Depende de AccountRepository (puerto de salida), no de JPA.
  */
 @Service
 public class DepositMoneyService implements DepositMoneyUseCase {
 
-    private final AccountRepository accountRepository; // Puerto de Salida
+    private final AccountRepository accountRepository;
 
     public DepositMoneyService(AccountRepository accountRepository) {
         this.accountRepository = accountRepository;
     }
 
     @Override
-    @Transactional // POR QUÉ: find + deposit + save deben ser atómicos. Si falla save, no queda el
-                   // deposito en memoria
+    @Transactional // find + deposit + save atómico, si falla save hace rollback
     public AccountDetailsDto depositMoney(DepositMoneyCommand command) {
-        // POR QUÉ new AccountId(command.accountId()): Conviertes String del DTO a Value
-        // Object de dominio
-        // El VO valida formato UUID dentro
+        // String del DTO -> VO de dominio que valida UUID
         var accountId = new AccountId(command.accountId());
 
-        // POR QUÉ findById + orElseThrow: El caso de uso es quien decide qué pasa si no
-        // existe
-        // Lanza excepción de dominio AccountNotFoundException, no una de Spring
+        // El caso de uso decide si no existe: lanza excepción de dominio, no de Spring
         var account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException(accountId));
 
-        // POR QUÉ Money.of(String.valueOf(command.amount())): Tu Command trae double
-        // Tu Value Object Money solo acepta String para usar BigDecimal(String) exacto
-        // Aquí haces la conversión en el borde de aplicación
-        // account.deposit() ya crea la Transaction interna y actualiza el balance
+        // double del Command -> String -> Money con BigDecimal exacto. deposit() crea
+        // Transaction y actualiza balance
         account.deposit(Money.of(String.valueOf(command.amount())));
 
         accountRepository.save(account);
 
-        // POR QUÉ MapToAccountDetailsDto.from(account): Devuelves DTO de lectura, no el
-        // Agregado
+        // No filtras Aggregate, devuelves Read Model para JSON
         return MapToAccountDetailsDto.from(account);
     }
 }

@@ -12,50 +12,35 @@ import com.banking.transactions.domain.port.AccountRepository;
 import jakarta.transaction.Transactional;
 
 /**
- * ADAPTER DE CASO DE USO - Implementación de Puerto de Entrada
+ * Adapter del Caso de Uso Crear Cuenta. Orquesta dominio.
+ * En application/service y no en infra porque es lógica de app, no detalle
+ * técnico.
  * 
- * PATH: application/service/ -> Va aquí y no en infrastructure/ porque es
- * lógica de aplicación, no detalle técnico. Es el que orquesta dominio.
- * En tu estructura ideal sería application/usecase/ pero service/ te vale.
- * 
- * POR QUÉ @Service: Marca la clase como bean de Spring. @SpringBootApplication
- * en infrastructure/config/ la detecta con @ComponentScan y la inyecta en
- * AccountController.
- * 
- * POR QUÉ implements CreateAccountUseCase: Inversión de Dependencia. El web
- * solo conoce la interface del port/. Tú aquí pones el CÓMO.
- * 
- * POR QUÉ private final AccountRepository: Puerto de Salida. No conoce JPA,
- * solo la interface de domain/port/. El impl real está en
- * infrastructure/persistence/.
+ * @Service para que Spring lo detecte e inyecte en el Controller.
+ *          Implementa CreateAccountUseCase (puerto de entrada) -> DIP: web solo
+ *          conoce interface.
+ *          Depende de AccountRepository (puerto de salida), no de JPA; impl
+ *          real en infra/persistence.
  */
 @Service
 public class CreateAccountService implements CreateAccountUseCase {
 
     private final AccountRepository accountRepository;
 
-    // POR QUÉ constructor y no @Autowired: Constructor injection = inmutable +
-    // testeable
     public CreateAccountService(AccountRepository accountRepository) {
-        this.accountRepository = accountRepository;
+        this.accountRepository = accountRepository; // constructor injection: inmutable y testeable
     }
 
     @Override
-    @Transactional // POR QUÉ: Si save() falla, rollback. La cuenta no queda a medias
+    @Transactional // rollback si save() falla
     public AccountDetailsDto createAccount(CreateAccountCommand command) {
-        // POR QUÉ este ternario: command.initialBalance() es Double objeto (nullable)
-        // Si viene null desde JSON, no es 0.0, es "no mandó saldo". Lo convertimos a
-        // Money.zero()
-        // Si viene con valor, lo pasamos a String para usar Money.of(String) que es
-        // exacto con BigDecimal
+        // Double nullable: null = no mandó saldo -> Money.zero(), si no, String.valueOf
+        // para BigDecimal exacto
         Money initialBalance = (command.initialBalance() == null)
                 ? Money.zero()
                 : Money.of(String.valueOf(command.initialBalance()));
 
-        // POR QUÉ AccountId.newId(): El Agregado Account es quien genera su identidad,
-        // no la DB
-        // POR QUÉ new Account(...): Creas el Agregado en estado válido. Su constructor
-        // ya valida
+        // Aggregate genera su identidad, no la DB. Constructor ya valida estado válido
         Account account = new Account(
                 AccountId.newId(),
                 command.customerId(),
@@ -63,9 +48,8 @@ public class CreateAccountService implements CreateAccountUseCase {
 
         accountRepository.save(account);
 
-        // POR QUÉ MapToAccountDetailsDto.from(account): Nunca devuelves el Agregado al
-        // exterior
-        // Mapeas a DTO de lectura (Read Model) con primitivos listos para JSON
+        // Anti-Corruption: no filtras Aggregate, devuelves DTO de lectura listo para
+        // JSON
         return MapToAccountDetailsDto.from(account);
     }
 }
