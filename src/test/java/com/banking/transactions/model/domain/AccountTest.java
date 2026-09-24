@@ -6,54 +6,43 @@ import com.banking.transactions.domain.model.Money;
 import com.banking.transactions.domain.model.TransactionType;
 import com.banking.transactions.domain.exception.InsufficientBalanceException;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-// TODO hacer yo el resto de tests, y entender que se esta probando y que se espera, en este caso que el balance sea 150.00 y que la transaccion sea de tipo DEPOSIT
-
+/**
+ * Test unitario del Aggregate Account - solo dominio, sin infra.
+ * Patrón AAA: Arrange / Act / Assert
+ */
 class AccountTest {
 
-    // AAA pattern:
-    // Arrange - initialize the account with a specific balance
-    // Act - perform the deposit action
-    // Assert - verify the balance has increased by the deposited amount
     @Test
     void should_deposit_money_into_account() {
-        // Arrange
+        // Arrange: cuenta nueva con 100.00
         Account account = new Account(AccountId.newId(), "123", Money.of("100.00"));
 
-        // Act
+        // Act: deposita 50.00
         account.deposit(Money.of("50.00"));
 
-        // Assert
-        // TODO entender que se esta probando y que se espera, en este caso que el
-        // balance sea 150.00 y que la transaccion sea de tipo DEPOSIT
+        // Assert: balance = 150.00 + 1 transacción tipo DEPOSIT en histórico
         assertEquals(Money.of("150.00").getAmount(), account.getBalance().getAmount());
-        assertFalse(account.getTransactions().isEmpty(), "Transaction history should not be empty after deposit");
-        assertEquals(TransactionType.DEPOSIT, account.getTransactions().getFirst().getTransactionType(),
-                "The first transaction should be a deposit");
+        assertFalse(account.getTransactions().isEmpty(), "Debe haber histórico tras deposit");
+        assertEquals(TransactionType.DEPOSIT, account.getTransactions().getFirst().getTransactionType());
     }
 
     @Test
     void should_not_allow_insufficient_balance_withdrawal() {
-        // Arrange
+        // Arrange: cuenta con 100.00
         Account account = new Account(AccountId.newId(), "123", Money.of("100.00"));
 
-        // Act
-        InsufficientBalanceException exception = assertThrows(InsufficientBalanceException.class, () -> {
+        // Act + Assert: retirar 150.00 -> lanza InsufficientBalanceException, balance
+        // intacto y sin transacciones
+        InsufficientBalanceException ex = assertThrows(InsufficientBalanceException.class, () -> {
             account.withdraw(Money.of("150.00"));
         });
 
-        // Assert
-        assertNotNull(exception.getMessage());
+        assertNotNull(ex.getMessage());
         assertEquals(Money.of("100.00"), account.getBalance());
         assertTrue(account.getTransactions().isEmpty());
     }
 
+    // TODO resto: withdraw ok, deposit <=0, withdraw <=0, reconstitute
 }
-
-// TODO hacer el resto de tests
