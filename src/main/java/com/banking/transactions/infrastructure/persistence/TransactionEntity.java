@@ -1,6 +1,8 @@
 package com.banking.transactions.infrastructure.persistence;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+
 import com.banking.transactions.domain.model.TransactionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,6 +49,10 @@ public class TransactionEntity {
      */
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
+
+    // Columna de auditoría. Instant en UTC para banca, no LocalDateTime
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
 
     /**
      * Relación a su Root Aggregate. LAZY = no carga Account hasta usarla. FK
