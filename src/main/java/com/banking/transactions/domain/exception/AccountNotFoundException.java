@@ -14,6 +14,6 @@ import com.banking.transactions.domain.model.AccountId;
 public class AccountNotFoundException extends RuntimeException {
 
     public AccountNotFoundException(AccountId accountId) {
-        super("Account not found with id: " + accountId);
+        super("Account not found with id: " + (accountId != null ? accountId.value() : "null"));
     }
 }

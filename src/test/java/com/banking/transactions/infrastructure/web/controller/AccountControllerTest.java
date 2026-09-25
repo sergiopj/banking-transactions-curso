@@ -85,7 +85,11 @@ class AccountControllerTest {
         mockMvc.perform(post("/api/accounts")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.path").value("/api/accounts"))
+                .andExpect(jsonPath("$.details").isArray());
     }
 
     @Test
@@ -111,7 +115,7 @@ class AccountControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/accounts/{id}/withdraw should return 422 Unprocessable Entity when InsufficientBalanceException is thrown")
+    @DisplayName("POST /api/accounts/{id}/withdraw should return 422 Unprocessable Entity with ErrorMessage when InsufficientBalanceException is thrown")
     void shouldReturn422WhenInsufficientBalance() throws Exception {
         when(withdrawMoneyUseCase.withdrawMoney(any(WithdrawMoneyCommand.class)))
                 .thenThrow(new InsufficientBalanceException("Insufficient balance"));
@@ -125,17 +129,25 @@ class AccountControllerTest {
         mockMvc.perform(post("/api/accounts/acc-1/withdraw")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload))
-                .andExpect(status().isUnprocessableContent());
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.error").value("Unprocessable Entity"))
+                .andExpect(jsonPath("$.message").value("Insufficient balance"))
+                .andExpect(jsonPath("$.path").value("/api/accounts/acc-1/withdraw"));
     }
 
     @Test
-    @DisplayName("GET /api/accounts/{id} should return 404 Not Found when AccountNotFoundException is thrown")
+    @DisplayName("GET /api/accounts/{id} should return 404 Not Found with ErrorMessage when AccountNotFoundException is thrown")
     void shouldReturn404WhenAccountNotFound() throws Exception {
         when(getAccountDetailsUseCase.getById("acc-999"))
                 .thenThrow(new AccountNotFoundException(new AccountId("acc-999")));
 
         mockMvc.perform(get("/api/accounts/acc-999"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Account not found with id: acc-999"))
+                .andExpect(jsonPath("$.path").value("/api/accounts/acc-999"));
     }
 
     @Test
