@@ -10,7 +10,7 @@ import com.banking.transactions.domain.exception.NegativeMoneyException;
  * proteger equals/inmutabilidad. Envuelve BigDecimal siempre con 2 decimales y
  * HALF_UP, nunca double.
  */
-public final class Money {
+public final class Money implements Comparable<Money> {
 
     private final BigDecimal amount; // final = inmutable total
 
@@ -105,6 +105,12 @@ public final class Money {
     @Override
     public int hashCode() {
         return amount.stripTrailingZeros().hashCode();
+    }
+
+    @Override
+    public int compareTo(Money other) {
+        Objects.requireNonNull(other, "Other money cannot be null");
+        return this.amount.compareTo(other.amount);
     }
 
     /** Evita notación científica 1E+2, devuelve "100.00" limpio para logs */

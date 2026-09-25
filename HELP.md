@@ -150,3 +150,8 @@ Tomando como ejemplo un **Ingreso de Dinero (Deposit)**:
 2. **Altísima Testeabilidad:** El dominio y los servicios se testean con tests unitarios instantáneos sin levantar Tomcat, Spring Context ni bases de datos.
 3. **Inmutabilidad y Auditoría:** Al no haber setters en `Transaction` ni `Money`, es imposible alterar importes o fechas por accidente en ejecución.
 4. **Separación de Responsabilidades:** El controller solo atiende HTTP, el caso de uso solo orquesta y el agregado solo garantiza sus reglas de negocio financieras.
+
+
+// TODO explicar bien lo de vitaminar y hidratacion
+
+// TODO hacer pliego api first para definir los endpoints y generar la docu en un nuevo endpoint por ejemplo /api/documentation
