@@ -63,3 +63,5 @@ public class TransactionEntity {
     private AccountEntity account;
 
 }
+
+// TODO se puede vitaminar esto como method por ejemplo app, cajero, oficina etc

@@ -64,6 +64,7 @@ public final class AccountMapper {
             te.setId(t.getId());
             te.setType(t.getTransactionType()); // enum directamente, no .name()
             te.setAmount(t.getAmount().getAmount());
+            te.setCreatedAt(t.getCreatedAt()); // asigna el timestamp generado por el dominio
             accountEntity.addTransaction(te);
         }
 
