@@ -2,101 +2,102 @@
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg?logo=openjdk)](https://www.oracle.com/java/technologies/downloads/#java21)
 [![Spring Boot 4.x](https://img.shields.io/badge/Spring%20Boot-4.1.1-brightgreen.svg?logo=springboot)](https://spring.io/projects/spring-boot)
-[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20DDD-blue.svg)](#-arquitectura-hexagonal-y-ddd)
+[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20DDD-blue.svg)](#-hexagonal-architecture--ddd)
 [![MySQL](https://img.shields.io/badge/Database-MySQL%208.0-blue.svg?logo=mysql)](https://www.mysql.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-41%20Passed-success.svg)](#-estrategia-de-testing)
+[![Tests](https://img.shields.io/badge/Tests-41%20Passed-success.svg)](#-testing-strategy)
 
-API RESTful transaccional de grado empresarial orientada al sector **Fintech / Banking Core**. Diseñada siguiendo estrictamente **Arquitectura Hexagonal (Ports & Adapters)**, **Domain-Driven Design (DDD)** y buenas prácticas de código limpio (**SOLID**, inmutabilidad, Value Objects y defensive programming).
-
----
-
-## 📑 Tabla de Contenidos
-
-- [🎯 Propósito del Proyecto](#-propósito-del-proyecto)
-- [🏛️ Arquitectura Hexagonal y DDD](#️-arquitectura-hexagonal-y-ddd)
-- [🛠️ Stack Tecnológico](#️-stack-tecnológico)
-- [📁 Estructura del Proyecto](#-estructura-del-proyecto)
-- [🚀 Puesta en Marcha (Local & Docker)](#-puesta-en-marcha-local--docker)
-- [📡 API Endpoints & Ejemplos cURL](#-api-endpoints--ejemplos-curl)
-- [🧪 Estrategia de Testing](#-estrategia-de-testing)
-- [🛡️ Manejo Centralizado de Errores](#️-manejo-centralizado-de-errores)
-- [🗺️ Roadmap & Siguientes Pasos](#️-roadmap--siguientes-pasos)
+Enterprise-grade, transactional RESTful API tailored for **Fintech & Core Banking** environments. Designed strictly adhering to **Hexagonal Architecture (Ports & Adapters)**, **Domain-Driven Design (DDD)**, and clean code principles (**SOLID**, immutability, rich Value Objects, and defensive programming).
 
 ---
 
-## 🎯 Propósito del Proyecto
+## 📑 Table of Contents
 
-El objetivo de este proyecto es demostrar cómo construir un **core transaccional bancario robusto**, donde el código de negocio sobrevive al paso del tiempo y a cambios tecnológicos. 
-
-### Principios Fundamentales:
-* **Independencia Tecnológica:** El Dominio no contiene ninguna anotación de Spring Boot ni dependencias de JPA/Hibernate.
-* **Precisión Monetaria:** El dinero se encapsula en un Value Object `Money` usando `BigDecimal` con escala forzada a 2 decimales y redondeo bancario `HALF_UP`, erradicando los errores de coma flotante de tipos primitivos como `double` o `float`.
-* **Protección contra Descubiertos:** Invariante de negocio infranqueable que impide saldos negativos o retiros mayores al balance disponible (`InsufficientBalanceException`).
-* **Auditoría e Inmutabilidad:** Cada depósito o retiro genera una `Transaction` append-only inmutable con timestamp UTC automático, garantizando trazabilidad completa.
+- [🎯 Project Purpose](#-project-purpose)
+- [🏛️ Hexagonal Architecture & DDD](#️-hexagonal-architecture--ddd)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [📁 Project Structure](#-project-structure)
+- [🚀 Getting Started (Local & Docker)](#-getting-started-local--docker)
+- [📡 API Endpoints & cURL Examples](#-api-endpoints--curl-examples)
+- [🧪 Testing Strategy](#-testing-strategy)
+- [🛡️ Centralized Error Handling](#️-centralized-error-handling)
+- [🗺️ Roadmap & Future Enhancements](#️-roadmap--future-enhancements)
+- [👨‍💻 Author & License](#-author--license)
 
 ---
 
-## 🏛️ Arquitectura Hexagonal y DDD
+## 🎯 Project Purpose
 
-La aplicación sigue el **Principio de Inversión de Dependencias (DIP)**: todas las dependencias apuntan hacia el interior.
+The primary objective of this project is to showcase how to architect a **resilient and maintainable banking core**, where critical business rules remain independent from external frameworks, persistence mechanisms, or delivery mechanisms.
+
+### Core Principles:
+* **Framework Independence:** The Domain layer is completely decoupled and free from Spring Boot or JPA/Hibernate annotations.
+* **Monetary Precision:** Money is encapsulated within a `Money` Value Object built on top of `BigDecimal`, enforcing a fixed 2-decimal scale and `HALF_UP` banking rounding to eliminate floating-point precision flaws.
+* **Overdraft Prevention:** An invariant rule prevents negative balances and rejects withdrawals exceeding the available balance (`InsufficientBalanceException`).
+* **Auditability & Immutability:** Every deposit and withdrawal appends an immutable, audit-ready `Transaction` record with an automated UTC timestamp.
+
+---
+
+## 🏛️ Hexagonal Architecture & DDD
+
+The application enforces the **Dependency Inversion Principle (DIP)**: all code dependencies flow strictly inwards toward the core domain.
 
 ```
-       [ ADAPTADOR ENTRADA ]         --> (HTTP REST Controller / JSON)
+       [ INBOUND ADAPTER ]           --> (HTTP REST Controller / JSON)
                 │
                 ▼
-       [ PUERTO ENTRADA ]            --> (CreateAccountUseCase interface)
+       [ DRIVING PORT ]              --> (CreateAccountUseCase interface)
                 │
 ┌───────────────┼────────────────────────────────────────┐
 │               ▼                                        │
-│     [ CAPA DE APLICACIÓN ]                             │
-│       - Orquestación de Casos de Uso (Services)        │
+│     [ APPLICATION LAYER ]                              │
+│       - Use Case Orchestration (Services)              │
 │       - Commands (Write Model) & DTOs (Read Model)     │
 │               │                                        │
 │               ▼                                        │
-│     [ CAPA DE DOMINIO ] (Core Agnóstico - Java Puro)   │
+│     [ DOMAIN LAYER ] (Pure Java Core - Agnostic)       │
 │       - Aggregate Root (Account)                       │
-│       - Entidades e Histórico (Transaction)            │
+│       - Immutable Entities & History (Transaction)     │
 │       - Value Objects (Money, AccountId)               │
-│       - Excepciones de negocio                         │
+│       - Business Exceptions                            │
 │               │                                        │
 │               ▼                                        │
-│     [ PUERTO DE SALIDA ]                               │
-│       - Interfaz (AccountRepository)                   │
+│     [ DRIVEN PORT ]                                    │
+│       - Repository Interface (AccountRepository)       │
 └───────────────┼────────────────────────────────────────┘
                 │
                 ▼
-       [ ADAPTADOR SALIDA ]          --> (AccountRepositoryAdapter / MySQL JPA)
+       [ OUTBOUND ADAPTER ]          --> (AccountRepositoryAdapter / MySQL JPA)
 ```
 
-### Separación de Responsabilidades:
-1. **`domain/` (Core):** Modelos puros (`Account`, `Transaction`, `Money`, `AccountId`), contratos de salida (`AccountRepository`) y excepciones de negocio (`InsufficientBalanceException`, `AccountNotFoundException`, `NegativeMoneyException`).
-2. **`application/` (Orquestación):** Casos de uso (`CreateAccountUseCase`, `DepositMoneyUseCase`, `WithdrawMoneyUseCase`, `GetAccountDetailsUseCase`), Commands inmutables y mappers a DTOs de salida.
-3. **`infrastructure/` (Tecnología):** Adaptadores Web REST (`AccountController`), Adaptadores JPA (`AccountRepositoryAdapter`, `SpringDataAccountRepository`), entidades relacionales (`AccountEntity`, `TransactionEntity`) y Manejador Global de Errores.
+### Layer Responsibilities:
+1. **`domain/` (Core):** Pure business logic (`Account`, `Transaction`, `Money`, `AccountId`), driven ports (`AccountRepository`), and domain exceptions (`InsufficientBalanceException`, `AccountNotFoundException`, `NegativeMoneyException`).
+2. **`application/` (Orchestration):** Use cases (`CreateAccountUseCase`, `DepositMoneyUseCase`, `WithdrawMoneyUseCase`, `GetAccountDetailsUseCase`), immutable Commands, and DTO mappers.
+3. **`infrastructure/` (Technology):** REST controllers (`AccountController`), outbound persistence adapters (`AccountRepositoryAdapter`, `SpringDataAccountRepository`), JPA entities (`AccountEntity`, `TransactionEntity`), and the Global Exception Handler.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Tech Stack
 
-| Componente | Tecnología | Razón de Elección |
+| Component | Technology | Rationale |
 |---|---|---|
-| **Lenguaje** | **Java 21 (LTS)** | Records inmutables, pattern matching, switch expressions, APIs modernas. |
-| **Framework** | **Spring Boot 4.x** | Configuración simplificada, inyección de dependencias y observabilidad nativa. |
-| **Persistencia** | **Spring Data JPA / Hibernate** | Mapeo relacional desacoplado del dominio mediante adaptadores. |
-| **Base de Datos** | **MySQL 8.0** | Motor transaccional compatible ACID. |
-| **Testing** | **JUnit 5 + Mockito + MockMvc** | Testing unitario puro e integración web de alto rendimiento. |
-| **Contenedores** | **Docker & Docker Compose** | Entornos portables, reproducibles y aislados. |
+| **Language** | **Java 21 (LTS)** | Immutable records, pattern matching, switch expressions, modern standard library. |
+| **Framework** | **Spring Boot 4.x** | Dependency injection, auto-configuration, and native observability. |
+| **Persistence** | **Spring Data JPA / Hibernate** | Relational mapping isolated behind outbound repository adapters. |
+| **Database** | **MySQL 8.0** | Full ACID-compliant relational transactional engine. |
+| **Testing** | **JUnit 5 + Mockito + MockMvc** | Fast domain unit tests, mocked application use cases, and WebMvc slice tests. |
+| **Containers** | **Docker & Docker Compose** | Reproducible, isolated local development and deployment environment. |
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Project Structure
 
 ```
 src/main/java/com/banking/transactions/
 ├── TransactionsApplication.java
 ├── health/
 │   └── HealthCheckController.java                 # Health check (/health)
-├── domain/                                        # DOMINIO (100% Java Puro)
+├── domain/                                        # DOMAIN (100% Pure Java)
 │   ├── exception/
 │   │   ├── AccountNotFoundException.java
 │   │   ├── InsufficientBalanceException.java
@@ -105,11 +106,11 @@ src/main/java/com/banking/transactions/
 │   │   ├── Account.java                           # Aggregate Root
 │   │   ├── AccountId.java                         # Value Object (Record)
 │   │   ├── Money.java                             # Value Object (BigDecimal + HALF_UP)
-│   │   ├── Transaction.java                       # Entity inmutable
+│   │   ├── Transaction.java                       # Immutable Entity
 │   │   └── TransactionType.java                   # Enum { DEPOSIT, WITHDRAW }
 │   └── port/
-│       └── AccountRepository.java                 # Puerto de Salida (Driven Port)
-├── application/                                   # APLICACIÓN (Casos de Uso)
+│       └── AccountRepository.java                 # Driven Port (Outbound)
+├── application/                                   # APPLICATION (Use Cases)
 │   ├── dto/
 │   │   ├── CreateAccountCommand.java              # Write Model (Command)
 │   │   ├── DepositMoneyCommand.java
@@ -118,69 +119,69 @@ src/main/java/com/banking/transactions/
 │   │   ├── TransactionDto.java
 │   │   └── MapToAccountDetailsDto.java            # Anti-Corruption Layer Mapper
 │   ├── port/
-│   │   ├── CreateAccountUseCase.java              # Puertos de Entrada (Driving Ports)
+│   │   ├── CreateAccountUseCase.java              # Driving Ports (Inbound)
 │   │   ├── DepositMoneyUseCase.java
 │   │   ├── WithdrawMoneyUseCase.java
 │   │   └── GetAccountDetailsUseCase.java
 │   └── service/
-│       ├── CreateAccountService.java              # Implementaciones de Casos de Uso
+│       ├── CreateAccountService.java              # Use Case Implementations
 │       ├── DepositMoneyService.java
 │       ├── WithdrawMoneyService.java
 │       └── GetAccountDetailsService.java
-└── infrastructure/                                # INFRAESTRUCTURA (Adaptadores)
+└── infrastructure/                                # INFRASTRUCTURE (Adapters)
     ├── adapter/
-    │   └── AccountRepositoryAdapter.java          # Adaptador Outbound (JPA Adapter)
+    │   └── AccountRepositoryAdapter.java          # Outbound Adapter (JPA Adapter)
     ├── mapper/
     │   └── AccountMapper/
-    │       └── AccountMapper.java                 # Mapeo Entity <-> Domain
+    │       └── AccountMapper.java                 # Entity <-> Domain Mapper
     ├── persistence/
     │   ├── AccountEntity.java                     # JPA Entity (accounts)
     │   └── TransactionEntity.java                 # JPA Entity (transactions)
     ├── repository/
-    │   └── SpringDataAccountRepository.java       # Spring Data JPA
+    │   └── SpringDataAccountRepository.java       # Spring Data JPA Interface
     └── web/
         ├── controller/
-        │   └── AccountController.java             # Adaptador Inbound (REST Controller)
+        │   └── AccountController.java             # Inbound Adapter (REST Controller)
         ├── dto/
         │   ├── CreateAccountRequest.java
         │   ├── DepositRequest.java
         │   ├── WithdrawRequest.java
         │   ├── AccountResponse.java
-        │   └── ErrorMessage.java                  # Formato unificado de error
+        │   └── ErrorMessage.java                  # Unified API error payload
         └── handler/
-            └── GlobalExceptionHandler.java        # @RestControllerAdvice centralizado
+            └── GlobalExceptionHandler.java        # Centralized @RestControllerAdvice
 ```
 
 ---
 
-## 🚀 Puesta en Marcha (Local & Docker)
+## 🚀 Getting Started (Local & Docker)
 
-### Prerrequisitos
+### Prerequisites
 * **Java 21**
 * **Docker & Docker Compose**
 
-### 1. Iniciar Base de Datos con Docker
-Inicia el contenedor de MySQL:
+### 1. Start MySQL with Docker
+Start the MySQL database container:
 ```bash
 docker compose up -d mysql
 ```
 
-### 2. Arrancar la Aplicación (Localmente)
+### 2. Run the Application Locally
 ```bash
 ./mvnw spring-boot:run
 ```
-La API estará disponible en `http://localhost:8080`.
+The API will be available at `http://localhost:8080`.
 
-### 3. O Desplegar Todo con Docker Compose
+### 3. Or Run Everything via Docker Compose
 ```bash
 docker compose up -d --build
 ```
 
 ---
 
-## 📡 API Endpoints & Ejemplos cURL
+## 📡 API Endpoints & cURL Examples
 
-### 1. Crear una Cuenta Bancaria
+### 1. Create a Bank Account
 `POST /api/accounts`
 ```bash
 curl -X POST http://localhost:8080/api/accounts \
@@ -190,7 +191,7 @@ curl -X POST http://localhost:8080/api/accounts \
     "initialBalance": 200.00
   }'
 ```
-**Respuesta (`201 Created`):**
+**Response (`201 Created`):**
 ```json
 {
   "id": "7ef0ebae-2139-4c16-9244-120309c04d21",
@@ -202,7 +203,7 @@ curl -X POST http://localhost:8080/api/accounts \
 
 ---
 
-### 2. Ingresar Dinero (Depósito)
+### 2. Deposit Money
 `POST /api/accounts/{id}/deposit`
 ```bash
 curl -X POST http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c04d21/deposit \
@@ -211,7 +212,7 @@ curl -X POST http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c0
     "amount": 50.00
   }'
 ```
-**Respuesta (`200 OK`):**
+**Response (`200 OK`):**
 ```json
 {
   "id": "7ef0ebae-2139-4c16-9244-120309c04d21",
@@ -229,7 +230,7 @@ curl -X POST http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c0
 
 ---
 
-### 3. Retirar Dinero
+### 3. Withdraw Money
 `POST /api/accounts/{id}/withdraw`
 ```bash
 curl -X POST http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c04d21/withdraw \
@@ -238,7 +239,7 @@ curl -X POST http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c0
     "amount": 100.00
   }'
 ```
-**Respuesta (`200 OK`):**
+**Response (`200 OK`):**
 ```json
 {
   "id": "7ef0ebae-2139-4c16-9244-120309c04d21",
@@ -261,7 +262,7 @@ curl -X POST http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c0
 
 ---
 
-### 4. Consultar Detalle de la Cuenta
+### 4. Get Account Details
 `GET /api/accounts/{id}`
 ```bash
 curl -X GET http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c04d21
@@ -274,13 +275,13 @@ curl -X GET http://localhost:8080/api/accounts/7ef0ebae-2139-4c16-9244-120309c04
 ```bash
 curl -X GET http://localhost:8080/health
 ```
-**Respuesta:** `{"status": 200}`
+**Response:** `{"status": 200}`
 
 ---
 
-## 🧪 Estrategia de Testing
+## 🧪 Testing Strategy
 
-El proyecto cuenta con una cobertura integral organizada en la pirámide de pruebas:
+The project implements a comprehensive testing pyramid:
 
 ```
           / \
@@ -292,35 +293,35 @@ El proyecto cuenta con una cobertura integral organizada en la pirámide de prue
     /-------------\  
 ```
 
-### Ejecutar todos los tests (41 tests, 0 failures):
+### Run All Tests (41 tests, 0 failures):
 ```bash
 ./mvnw test
 ```
-O ejecutando la Test Suite directamente desde el IDE:
-* **[`AllTestsSuite.java`](src/test/java/com/banking/transactions/AllTestsSuite.java)** (`@Suite` de JUnit 5).
+Or run the suite directly from your IDE:
+* **[`AllTestsSuite.java`](src/test/java/com/banking/transactions/AllTestsSuite.java)** (`@Suite` from JUnit 5).
 
-### Resumen de la Suite de Pruebas:
-* **Dominio Puro (`MoneyTest`, `TransactionTest`, `AccountTest`):** 19 tests que validan invariantes, cálculos, límites monetarios, protección contra saldos negativos y listas inmutables.
-* **Capa de Aplicación (`CreateAccountServiceTest`, `DepositMoneyServiceTest`, `WithdrawMoneyServiceTest`, `GetAccountDetailsServiceTest`):** 9 tests con Mockito comprobando orquestación, mapeos y propagación de errores.
-* **Mappers (`AccountMapperTest`):** 2 tests de conversión bidireccional Dominio $\leftrightarrow$ Entidad JPA.
-* **Capa Web e Integración (`AccountControllerTest`):** 6 tests con `MockMvc` validando serialización JSON, códigos `200`, `201`, `400`, `404`, `422` y la estructura de los payloads de error.
-* **Context & Smoke (`TransactionsApplicationTests`):** Valida la carga completa del contexto de Spring y el esquema de base de datos.
+### Test Breakdown:
+* **Pure Domain (`MoneyTest`, `TransactionTest`, `AccountTest`):** 19 tests validating business invariants, rounding, arithmetic immutability, negative balance protection, and unmodifiable lists.
+* **Application Services (`CreateAccountServiceTest`, `DepositMoneyServiceTest`, `WithdrawMoneyServiceTest`, `GetAccountDetailsServiceTest`):** 9 Mockito tests verifying use case orchestration, state preservation, and exception propagation.
+* **Mappers (`AccountMapperTest`):** 2 unit tests covering bidirectional `Account` $\leftrightarrow$ `AccountEntity` transformations.
+* **Web Integration (`AccountControllerTest`):** 6 tests with `MockMvc` validating HTTP status codes (`200`, `201`, `400`, `404`, `422`), request payload validation, and `ErrorMessage` response structures.
+* **Context & Smoke (`TransactionsApplicationTests`):** Full Spring context and database configuration verification.
 
 ---
 
-## 🛡️ Manejo Centralizado de Errores
+## 🛡️ Centralized Error Handling
 
-Las excepciones de dominio se interceptan en [`GlobalExceptionHandler.java`](src/main/java/com/banking/transactions/infrastructure/web/handler/GlobalExceptionHandler.java) sin ensuciar los controladores con bloques `try-catch`:
+Domain exceptions are mapped into standard HTTP responses within [`GlobalExceptionHandler.java`](src/main/java/com/banking/transactions/infrastructure/web/handler/GlobalExceptionHandler.java), keeping controllers clean from `try-catch` blocks:
 
-| Excepción | Código HTTP | Descripción |
+| Exception | HTTP Status | Description |
 |---|---|---|
-| `AccountNotFoundException` | `404 Not Found` | Cuenta no encontrada por identificador. |
-| `InsufficientBalanceException` | `422 Unprocessable Content` | Saldo insuficiente para realizar el retiro. |
-| `NegativeMoneyException` | `400 Bad Request` | Importe monetario menor o igual a cero. |
-| `MethodArgumentNotValidException` | `400 Bad Request` | Fallos de validación en JSON de entrada (`@Valid`). |
-| `IllegalArgumentException` | `400 Bad Request` | Formatos inválidos (ej: UUID corrupto). |
+| `AccountNotFoundException` | `404 Not Found` | Requested account does not exist. |
+| `InsufficientBalanceException` | `422 Unprocessable Content` | Account lacks sufficient funds for withdrawal. |
+| `NegativeMoneyException` | `400 Bad Request` | Monetary value is less than or equal to zero. |
+| `MethodArgumentNotValidException` | `400 Bad Request` | Payload failed `@Valid` validation constraints. |
+| `IllegalArgumentException` | `400 Bad Request` | Malformed inputs (e.g., invalid UUID). |
 
-### Formato Estándar de Respuesta de Error (`ErrorMessage`):
+### Standard Error Response (`ErrorMessage`):
 ```json
 {
   "status": 422,
@@ -334,17 +335,18 @@ Las excepciones de dominio se interceptan en [`GlobalExceptionHandler.java`](src
 
 ---
 
-## 🗺️ Roadmap & Siguientes Pasos
+## 🗺️ Roadmap & Future Enhancements
 
-- [ ] **Transferencias entre Cuentas:** Caso de uso `TransferMoneyUseCase` para mover fondos entre dos agregados de forma transaccional (cumplimiento ACID).
-- [ ] **Seguridad Bancaria:** Integración de Spring Security con autenticación y autorización mediante tokens JWT.
-- [ ] **Tipo de Movimiento como Entidad/Catálogo:** Evolucionar `TransactionType` a una entidad de base de datos para soportar comisiones dinámicas, límites diarios y códigos de propósito ISO 20022.
-- [ ] **Pruebas con Testcontainers:** Integración de contenedores efímeros de base de datos para ejecución automática en pipelines de CI/CD.
-- [ ] **Documentación OpenAPI / Swagger:** Generación automática de especificación interactiva para consumo frontend.
+- [ ] **Inter-Account Transfers:** Add a `TransferMoneyUseCase` ensuring atomic transfers between two accounts (ACID-compliant).
+- [ ] **Banking Security:** Integrate Spring Security with JWT-based authentication and role authorization.
+- [ ] **Transaction Types as Entities/Catalog:** Evolve `TransactionType` into a dynamic database-driven entity to support configurable fees, daily limits, and ISO 20022 purpose codes.
+- [ ] **Testcontainers Integration:** Spin up ephemeral MySQL test containers for seamless CI/CD test execution.
+- [ ] **OpenAPI / Swagger Documentation:** Interactive API documentation via Springdoc OpenAPI.
 
 ---
 
-## 👨‍💻 Autor & Licencia
+## 👨‍💻 Author & License
 
-Desarrollado como proyecto de ingeniería de software y arquitectura limpia para entornos bancarios y corporativos de alto nivel.
-Licencia MIT.
+Developed as an enterprise-grade software engineering reference project focusing on Clean Architecture and Domain-Driven Design in banking.
+
+Licensed under the **MIT License**.
